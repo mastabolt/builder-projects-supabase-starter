@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabaseClient'
+import { getSupabase } from '../lib/supabaseClient'
 
 export default function Properties() {
+  const supabase = getSupabase()
   const [rows, setRows] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!!supabase)
   const [form, setForm] = useState({
     address: '',
     city: '',
@@ -16,6 +17,7 @@ export default function Properties() {
   const [error, setError] = useState('')
 
   async function load() {
+    if (!supabase) return
     setLoading(true)
     setError('')
     const { data, error } = await supabase
@@ -32,6 +34,7 @@ export default function Properties() {
 
   async function createProperty(e) {
     e.preventDefault()
+    if (!supabase) return setError('Supabase env vars not set.')
     setError('')
     const payload = {
       address: form.address,
@@ -46,6 +49,19 @@ export default function Properties() {
     if (error) { setError(error.message); return }
     setForm({ address:'', city:'', state:'', zip:'', bedrooms:0, bathrooms:0, purchase_price:0 })
     await load()
+  }
+
+  if (!supabase) {
+    return (
+      <div className="p-4 rounded-xl border border-gray-200 bg-white">
+        <div className="font-medium">Supabase isn’t configured yet.</div>
+        <p className="text-sm text-gray-600 mt-1">
+          Add <code className="bg-gray-100 px-1 py-0.5 rounded">VITE_SUPABASE_URL</code> and{' '}
+          <code className="bg-gray-100 px-1 py-0.5 rounded">VITE_SUPABASE_ANON_KEY</code> in Netlify → Site settings → Environment variables,
+          then redeploy.
+        </p>
+      </div>
+    )
   }
 
   return (
@@ -101,6 +117,7 @@ export default function Properties() {
               </tbody>
             </table>
           )}
+          {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
         </div>
       </div>
     </div>
